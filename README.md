@@ -11,17 +11,17 @@ Express/Sequelize implementation of AuthGuard v2 backed by PostgreSQL. The servi
 
 ```powershell
 Copy-Item .env.example .env
-npm install
+npm ci
 docker compose up -d postgres
-npm run db:setup
+npm run db:migrate
 npm start
 ```
 
-The default `npm run db:seed` creates only the super-admin authentication data. The application catalog and workspace navigation seeders are separate and must be run explicitly with `npm run db:seed:workspace`.
+This native-development recipe reuses the existing local PostgreSQL setup. For independent Mac deployments, follow [DEPLOYMENT.md](DEPLOYMENT.md) and use the separate `BENODR27/common-db` repository for an isolated test database. The legacy `docker-compose.yml` remains because existing local databases and volumes are managed through it; it is not the independent app startup file. Do not seed or bootstrap a restored database.
 
-Set `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`, and optional SSL settings in `.env`. With `NODE_ENV=development`, login returns a development-only session marker containing the user ID, session version, and login time; protected API routes retain wildcard permissions while identifying that user for presence and command polling. No `JWT_SECRET` is needed. For any non-development environment, configure a random `JWT_SECRET` of at least 32 characters; JWTs are validated and expire after `JWT_EXPIRES_IN` (default `8h`). Never expose development mode outside local development. Migrations are explicit; the service does not call `sequelize.sync()` at startup.
+Set `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`, and optional SSL settings in `.env`. All environments, including development, use signed IAM JWTs and enabled role/permission grants. Configure `JWT_SECRET`, `JWT_ISSUER` and `JWT_AUDIENCE` consistently with MMMS and storage; preserve their existing values when moving data. No automatic wildcard development session is provided. JWTs expire after `JWT_EXPIRES_IN` (default `8h`). Migrations are explicit; the service does not call `sequelize.sync()` at startup.
 
-The active Angular development environment in `cfadmin-frontend` must point `authv2ApiUrl` at the Node host (for example, `http://localhost:3026/v3` when running locally). The Node service then serves `/v3/api/auth/...`. The legacy v1 `authApiUrl` remains unchanged. Production still requires the existing auth host/reverse proxy to route API requests and WebSocket upgrades for `/v3/api/auth/admin/presence` to this Node service, forwarding the WebSocket `Upgrade` and `Connection` headers.
+The ERP frontend uses the same-origin gateway in Docker; configure `IAM_UPSTREAM` with the IAM server's IP and published port 5002. The API mount is `/v3/api/auth`. Its gateway must also forward WebSocket upgrades for `/v3/api/auth/admin/presence`. Runtime application navigation comes from IAM's authenticated workspace endpoint.
 
 To enable administration after registering the first account:
 
@@ -44,7 +44,7 @@ The code is split into resource-specific files, following the Spring Boot contro
 
 The current Express mount is `/v3/api/auth`. Workspace applications expose the `applicationName`, optional Bootstrap `applicationIcon`, and optional `requiredPermission` catalog fields.
 
-All paths are relative to `/v2/api/auth`. JSON bodies use the property names from the Java DTOs. Management endpoints require `Authorization: Bearer YOUR_JWT_HERE` and the corresponding enabled permission.
+All paths are relative to `/v3/api/auth`. Management endpoints require `Authorization: Bearer YOUR_JWT_HERE` and the corresponding enabled permission.
 
 | Method | Path | Purpose |
 |---|---|---|
@@ -70,7 +70,7 @@ All paths are relative to `/v2/api/auth`. JSON bodies use the property names fro
 | PUT, DELETE | `/applications/navigation/:applicationName` | Create/update or remove an application's navigation configuration (`applications:manage`) |
 | GET | `/version` | Return the current deployed frontend version; public and not cacheable |
 
-`GET /v3/api/auth/applications/workspace` returns the same application array as `result`, plus a `navigation` array of `{ applicationName, landingRoute, navbarItems }` objects. Run `npm run db:migrate` before `npm run db:seed` to create the super-admin authentication data. The workspace catalog and navigation configuration are intentionally empty by default; populate them only with the explicit `npm run db:seed:workspace` command.
+`GET /v3/api/auth/applications/workspace` returns the application array as `result`, plus a `navigation` array of `{ applicationName, landingRoute, navbarItems }` objects. Apply pending migrations before startup. Preserve administrator-customized navigation and grants on restored installations; do not run catalog seeders as an upgrade step. Initial catalog/bootstrap commands are explicit clean-install operations.
 
 Navigation configuration writes accept `landingRoute` and a `navbarItems` array. Each item requires `icon`, `link`, `label`, and `permission`; landing and item routes must be absolute Angular paths beginning with one slash.
 
@@ -94,12 +94,4 @@ User presence is account-level: successful login records `lastLoginAt` and activ
 
 The migrations use the legacy table names (`app_users`, `app_roles`, `app_permissions`, `app_user_roles`, `app_role_permissions`, `app_applications`, `app_themes`, and `application_themes`) and do not create ORM timestamp columns. In `app_user_roles`, the legacy `employee_code` column stores the numeric `app_users.id` foreign key, despite its name.
 
-Run `npm run db:migrate` and then `npm run db:seed` to create only the super-admin authentication data. The workspace catalog and navigation seeders are separate and must be invoked explicitly with `npm run db:seed:workspace`.
-# authguardv2-node
-# authguardv2-node
-# authguardv2-node
-# authguardv2-node
-# authguardv2-node
-# authguardv2-node
-# auth-backend
-# neola-iam-backend
+Existing installations require only pending migrations and the normal start command. Clean-install seed/bootstrap commands must not be used to repair or reset an existing administrator.
