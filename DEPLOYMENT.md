@@ -27,6 +27,33 @@ No frontend receives database passwords, signing private keys or activation keys
 
 ## Run this repository
 
+### First installation: base configuration and administrator
+
+After database migrations, copy `seed.env.example` to private `.env.seed` and set
+the desired administrator username/password. Use literal, unquoted values. Then:
+
+```sh
+docker compose --env-file .env.deploy -f compose.independent.yaml --profile maintenance run --rm --build seed
+```
+
+Optional npm alias: `npm run docker:seed`. Native CLI: `npm run db:seed:base`.
+The seed registers missing MMMS page/action permissions and navigation, using
+existing domain configuration; migrations provide IAM/Masters setup and standard
+units/currency. It creates one administrator only when IAM has no users.
+Repeat runs preserve passwords, disabled flags, existing grants and customized
+menus. A different bootstrap username on a populated database is refused.
+
+For a restored database, use migrations only. If an administrator explicitly
+needs missing MMMS definitions registered without user creation, use:
+
+```sh
+docker compose --env-file .env.deploy -f compose.independent.yaml --profile maintenance run --rm --build seed node scripts/seed-base.js --configs-only
+```
+
+Seeding is an explicit maintenance job, never part of runtime startup. Do not put
+`.env.seed` or real seed passwords in Git. It creates no customer scopes, assets,
+commercial plans or subscriptions.
+
 For customer production deployment:
 
 ```sh

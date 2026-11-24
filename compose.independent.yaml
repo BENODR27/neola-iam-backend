@@ -1,4 +1,4 @@
-# Independently managed service. No databases, seeds or sibling build contexts.
+# Independently managed service. Explicit maintenance jobs; no automatic bootstrap.
 name: neola-iam-backend
 services:
   iam:
@@ -28,3 +28,15 @@ services:
       - path: .env.container
         format: raw
     command: ['sh', '-ec', 'npm run db:migrate']
+  seed:
+    profiles: [maintenance]
+    build:
+      context: .
+      target: init
+    env_file:
+      - path: .env.container
+        format: raw
+      - path: .env.seed
+        format: raw
+        required: false
+    command: ['node', 'scripts/seed-base.js']

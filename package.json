@@ -12,7 +12,7 @@
     "dev": "node --watch src/server.js",
     "db:migrate": "sequelize-cli db:migrate",
     "db:setup": "npm run db:migrate && npm run db:seed",
-    "db:seed": "npm run db:seed:auth",
+    "db:seed": "npm run db:seed:base",
     "db:seed:auth": "sequelize-cli db:seed --seed 20261005000100-seed-authguard-permissions.js && sequelize-cli db:seed --seed 20261109000100-seed-superadmin.js && sequelize-cli db:seed --seed 20261110000100-seed-mmms-permissions.js && sequelize-cli db:seed --seed 20261111000800-update-mmms-navigation.js && sequelize-cli db:seed --seed 20261111001000-seed-access-scope-permission.js && sequelize-cli db:seed --seed 20261111001200-seed-vendor-permissions-navigation.js && sequelize-cli db:seed --seed 20261111001300-ensure-superadminv2-navigation.js && sequelize-cli db:seed --seed 20261111001400-seed-telemetry-permissions.js",
     "db:seed:workspace": "sequelize-cli db:seed --seed 20261007000100-seed-workspace-applications.js && sequelize-cli db:seed --seed 20261007000200-seed-application-navigation.js",
     "db:seed:undo": "sequelize-cli db:seed:undo:all",
@@ -25,7 +25,11 @@
     "docker:up": "docker compose --env-file .env.deploy -f compose.independent.yaml up -d --build",
     "docker:logs": "docker compose --env-file .env.deploy -f compose.independent.yaml logs --tail=100 -f",
     "docker:migrate": "docker compose --env-file .env.deploy -f compose.independent.yaml --profile maintenance run --rm --build migrate",
-    "docker:customer": "docker compose --env-file .env.deploy -f compose.independent.yaml -f compose.customer.yaml up -d --build"
+    "docker:customer": "docker compose --env-file .env.deploy -f compose.independent.yaml -f compose.customer.yaml up -d --build",
+    "db:seed:base": "node scripts/seed-base.js",
+    "docker:seed": "docker compose --env-file .env.deploy -f compose.independent.yaml --profile maintenance run --rm --build seed",
+    "db:seed:config": "node scripts/seed-base.js --configs-only",
+    "docker:seed:config": "docker compose --env-file .env.deploy -f compose.independent.yaml --profile maintenance run --rm --build seed node scripts/seed-base.js --configs-only"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

@@ -6,6 +6,7 @@ const actions = ['VIEW', 'CREATE', 'EDIT', 'DELETE', 'APPROVE', 'REJECT', 'ASSIG
 const names = [...modules.flatMap((module) => actions.map((action) => `MMMS-${module}-${action}`)), 'MMMS-TRANSFERS-RECEIVE', 'MMMS-SPARE-PARTS-TRANSACT', 'MMMS-SPARE-PARTS-ADJUST', 'MMMS-PREVENTIVE-MAINTENANCE-GENERATE', 'MMMS-COSTS-VOID'];
 
 module.exports = {
+  names,
   async up(queryInterface, Sequelize) {
     await queryInterface.sequelize.transaction(async (transaction) => {
       const existing = await queryInterface.sequelize.query('SELECT name FROM app_permissions WHERE name IN (:names)', {
